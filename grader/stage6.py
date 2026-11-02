@@ -1,4 +1,4 @@
-"""Этап 6. Мониторинг, CI для ML и защита (вопросы 35–36)."""
+"""Этап 6. Мониторинг, CI для ML и итоговый отчёт (вопросы 35–36)."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from grader.common import doc_sections, readme_filled
 from grader.core import Check, Ctx, Outcome, Skip, fail, ok, part
 
 KEY = "stage6"
-TITLE = "Этап 6. Мониторинг и защита"
+TITLE = "Этап 6. Мониторинг и итоги"
 QUESTIONS = "35–36"
 SUMMARY = "reports/drift_summary.json"
 HTML = "reports/drift_report.html"
@@ -65,7 +65,7 @@ def c_live(ctx: Ctx) -> Outcome:
     if _summary(ctx) is None:
         return fail("сначала сделайте и закоммитьте отчёт о дрейфе (проверка 6.1)")
     if ctx.track == "llm":
-        raise Skip("LLM-трек: воспроизводимость мониторинга смотрим на защите")
+        raise Skip("LLM-трек: воспроизводимость мониторинга смотрит преподаватель при проверке")
     good, msg, out_dir, _ = ctx.smoke("train", timeout=300)
     if not good:
         return fail(f"smoke-обучение падает, мониторинг проверить нельзя: {msg}")

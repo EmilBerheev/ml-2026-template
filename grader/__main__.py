@@ -85,7 +85,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print(to_console(results))
     print(f"\nВремя проверки: {time.perf_counter() - started:.0f} с. "
-          "Ручная часть (40 баллов на этап) — на защите.")
+          "Ручная часть (40 баллов на этап) — при проверке репозитория.")
     report = to_json(results, ctx)
     report["seconds"] = round(time.perf_counter() - started, 1)
     Path(args.json).write_text(json.dumps(report, ensure_ascii=False, indent=2), "utf-8")

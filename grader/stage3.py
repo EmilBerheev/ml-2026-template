@@ -129,7 +129,7 @@ def c_threshold(ctx: Ctx) -> Outcome:
     if (v >= thr) if hib else (v <= thr):
         return ok()
     return fail(f"{metric}={v:.4f}, порог из этапа 1 — {thr}. Не дотянули: разберите причины в "
-                "README (это оценят на защите)")
+                "README (это оценят при ручной проверке)")
 
 
 def c_optuna(ctx: Ctx) -> Outcome:

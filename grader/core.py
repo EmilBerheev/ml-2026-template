@@ -292,7 +292,7 @@ def to_markdown(stages: list[StageResult], manual_points: int = 40) -> str:
     for s in stages:
         lines.append(f"| {s.title} | {s.earned:g} | {s.max} |")
     lines += ["", f"Ручную часть ({manual_points} баллов на этап) выставляет преподаватель "
-                  "на защите.", ""]
+                  "при проверке репозитория.", ""]
     for s in stages:
         lines += [f"## {s.title} — {s.earned:g} из {s.max}", f"Вопросы: {s.questions}", "",
                   "| Проверка | Баллы | Статус | Что исправить |", "|---|---:|---|---|"]
