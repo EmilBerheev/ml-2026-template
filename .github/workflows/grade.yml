@@ -1,0 +1,57 @@
+# Автопроверка: на каждый push считает баллы по всем этапам и пишет таблицу в сводку прогона.
+# Оценка — не «красный CI»: workflow падает, только если сломался сам грейдер.
+name: grade
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: grade-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0          # нужны теги stage-N
+
+      # Если преподаватель задал переменную репозитория GRADER_REPO (owner/repo),
+      # грейдер берётся оттуда, а не из копии студента.
+      - name: Грейдер преподавателя
+        if: ${{ vars.GRADER_REPO != '' }}
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ vars.GRADER_REPO }}
+          ref: ${{ vars.GRADER_REF || 'main' }}
+          path: .teacher-grader
+          token: ${{ secrets.GRADER_TOKEN || github.token }}
+      - name: Подменить grader/
+        if: ${{ vars.GRADER_REPO != '' }}
+        run: |
+          rm -rf grader
+          cp -r .teacher-grader/grader ./grader
+          rm -rf .teacher-grader
+
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+
+      - name: Зависимости
+        run: uv sync --locked
+
+      - name: Автопроверка
+        run: uv run python -m grader all --json grade.json
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: grade
+          path: grade.json
+          if-no-files-found: ignore

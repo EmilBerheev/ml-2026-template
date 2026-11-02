@@ -1,0 +1,24 @@
+# Контракт данных: какие колонки ждём, какого они типа и в каких пределах.
+# По нему работают data-тесты (tests/test_data.py) и функция mlproject.validate.validate.
+# dtype: int | float | str | category | date | bool
+# Необязательные поля: nullable (по умолчанию true), unique, min, max, allowed, max_missing (доля 0..1)
+
+columns:
+  customer_id:      {dtype: str, nullable: false, unique: true}
+  signup_date:      {dtype: date, nullable: false, min: "2015-01-01", max: "2026-12-31"}
+  tenure_months:    {dtype: int, nullable: false, min: 0, max: 240}
+  monthly_charges:  {dtype: float, nullable: false, min: 0, max: 1000}
+  total_charges:    {dtype: float, min: 0, max: 300000, max_missing: 0.05}
+  contract:         {dtype: category, nullable: false, allowed: [month-to-month, one-year, two-year]}
+  payment_method:   {dtype: category, nullable: false, allowed: [card, bank_transfer, e_wallet, cash]}
+  internet_service: {dtype: category, nullable: false, allowed: [dsl, fiber, none]}
+  region:           {dtype: category, nullable: false, allowed: [center, north, south, east, west]}
+  support_calls:    {dtype: int, nullable: false, min: 0, max: 100}
+  num_services:     {dtype: int, nullable: false, min: 0, max: 20}
+  churn:            {dtype: int, nullable: false, allowed: [0, 1]}
+
+# Общие ограничения на таблицу
+table:
+  min_rows: 200
+  # доля положительного класса: если вышла за пределы — данные, скорее всего, сломались
+  target_share: {min: 0.05, max: 0.60}

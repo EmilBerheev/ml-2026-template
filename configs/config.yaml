@@ -1,0 +1,123 @@
+# Конфигурация проекта. Код читает только этот файл и configs/schema.yaml:
+# поменяли датасет — поменяйте значения здесь, а не в коде.
+
+project:
+  name: churn-demo
+  # Номер и название варианта из lab.md, например "V04 Bank Marketing".
+  # "demo" — встроенный синтетический датасет шаблона, сдавать на нём нельзя.
+  variant: demo
+  # classic — табличные/CV/NLP-модели; llm — LLM-трек (RAG + evals), см. lab.md
+  track: classic
+  seed: 42
+
+data:
+  # Полный датасет: не коммитится (см. .gitignore), скачивается скриптом или по инструкции из docs/data_card.md
+  full_path: data/raw/dataset.csv
+  # Маленькая выборка (до 5 МБ) для CI и тестов. Коммитится.
+  sample_path: data/sample.csv
+  id_column: customer_id
+  target: churn
+  # Колонка времени: нужна для временного разбиения и для мониторинга. null, если её нет.
+  time_column: signup_date
+  # Колонка групп (например, user_id), чтобы один объект не попал и в train, и в test. null, если нет.
+  group_column: null
+  # Колонки, которые нельзя давать модели: утечки, идентификаторы, персональные данные
+  drop_columns: []
+
+task:
+  # binary | multiclass | regression
+  type: binary
+  positive_label: 1
+  # порог для перевода вероятности в класс (бинарная классификация)
+  decision_threshold: 0.5
+
+metric:
+  # binary: roc_auc | pr_auc | f1 | recall | precision | balanced_accuracy
+  # multiclass: f1_macro | accuracy | balanced_accuracy | roc_auc
+  # regression: mae | rmse | r2 | mape
+  primary: roc_auc
+  secondary: [pr_auc, f1, brier]
+  # Критерий успеха из этапа 1 (docs/problem.md, «Порог успеха»)
+  threshold: 0.80
+
+split:
+  # random | stratified | group | time
+  strategy: stratified
+  val_size: 0.2
+  test_size: 0.2
+
+features:
+  numeric:
+    - tenure_months
+    - monthly_charges
+    - total_charges
+    - support_calls
+    - num_services
+    - charges_per_month   # создаётся в features.add_features
+  categorical:
+    - contract
+    - payment_method
+    - internet_service
+    - region
+  # колонка с текстом (для NLP-вариантов): TF-IDF в baseline. null, если текста нет.
+  text: null
+
+models:
+  baseline:
+    # logreg для классификации, ridge для регрессии
+    C: 1.0
+    class_weight: null      # balanced — при сильном дисбалансе
+  boosting:
+    library: lightgbm
+    n_estimators: 400
+    learning_rate: 0.05
+    num_leaves: 31
+    class_weight: null
+  nn:
+    # auto — PyTorch, если установлен (uv sync --group torch), иначе MLP из scikit-learn
+    framework: auto
+    hidden: [128, 64]
+    dropout: 0.2
+    lr: 0.001
+    weight_decay: 0.0001
+    epochs: 60
+    batch_size: 128
+    patience: 8
+
+optuna:
+  n_trials: 30
+  timeout_seconds: 600
+
+mlflow:
+  # SQLite-файл в корне проекта; посмотреть: uv run mlflow ui --backend-store-uri sqlite:///mlflow.db
+  tracking_uri: sqlite:///mlflow.db
+  experiment: churn-demo
+  log_model: true
+
+evaluation:
+  n_bootstrap: 1000
+  ci_level: 0.95
+  n_errors: 50
+  # категориальная колонка для анализа по срезам (slices)
+  slice_column: contract
+
+monitoring:
+  # с чем сравниваем: train | val
+  reference: train
+  # Симуляция сдвига для отчёта о дрейфе: применяется к test-части
+  shift:
+    - {column: monthly_charges, kind: scale, factor: 1.25}
+    - {column: support_calls, kind: add, value: 2}
+    - {column: contract, kind: set_share, value: month-to-month, share: 0.75}
+  alerts:
+    drift_share: 0.3        # доля «уплывших» колонок, после которой поднимаем тревогу
+    metric_drop: 0.05       # падение основной метрики, после которого переобучаем
+
+# Быстрый прогон для CI и тестов: uv run python -m mlproject.train --smoke
+smoke:
+  rows: 1200
+  n_trials: 3
+  n_estimators: 60
+  epochs: 5
+  n_bootstrap: 100
+  log_model: false

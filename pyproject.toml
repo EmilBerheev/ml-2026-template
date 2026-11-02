@@ -1,0 +1,86 @@
+[project]
+name = "mlproject"
+version = "0.1.0"
+description = "Учебный ML-проект: от постановки задачи до мониторинга"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "numpy>=2.3",
+    # Evidently 0.7 обращается к внутренностям pandas, которые убрали в 3.1, поэтому <3.1.
+    # Когда выйдет совместимый Evidently — снимите ограничение и пересоберите uv.lock.
+    "pandas>=3.0,<3.1",
+    "pyarrow>=22",
+    "scikit-learn>=1.9",
+    "lightgbm>=4.7",
+    "optuna>=5.0",
+    "mlflow>=3.10",
+    "evidently>=0.7.20,<0.8",
+    "matplotlib>=3.10",
+    "pyyaml>=6.0",
+    "joblib>=1.5",
+    "fastapi>=0.160",
+    "uvicorn>=0.50",
+]
+
+[dependency-groups]
+# ставится по умолчанию (uv sync): тесты, линтер, клиент для TestClient
+dev = [
+    "pytest>=9.0",
+    "httpx2>=2.16",       # клиент для fastapi.testclient (Starlette 1.x рекомендует httpx2)
+    "ruff>=0.17",
+]
+# uv sync --group notebooks — реактивные ноутбуки marimo (+ nbformat для экспорта в .ipynb/Colab)
+notebooks = [
+    "marimo>=0.25",
+    "nbformat>=5.10",
+]
+# uv sync --group torch — нейросеть на PyTorch (CPU-колёса, см. [tool.uv.sources])
+torch = [
+    "torch>=2.15",
+]
+# uv sync --group explain — пакет shap для beeswarm-графиков (SHAP-значения считаются и без него)
+explain = [
+    "shap>=0.54",
+]
+# uv sync --group llm — LLM-трек: клиент Ollama
+llm = [
+    "ollama>=0.6",
+]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu" }]
+
+[build-system]
+requires = ["uv_build>=0.9,<0.20"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+    "data: тесты данных (схема, пропуски, утечки)",
+    "model: тесты модели (качество, инварианты)",
+    "api: тесты сервиса (FastAPI)",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::FutureWarning",
+    "ignore::UserWarning",
+    "ignore::SyntaxWarning",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+extend-exclude = ["notebooks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]

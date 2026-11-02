@@ -1,0 +1,29 @@
+# окружение
+.venv/
+__pycache__/
+*.pyc
+.ruff_cache/
+.pytest_cache/
+.ipynb_checkpoints/
+__marimo__/
+
+# полный датасет и промежуточные данные — не коммитим (см. docs/data_card.md → «Источник»)
+data/raw/
+data/processed/
+
+# MLflow: база и артефакты остаются локально, в git идёт выгрузка reports/mlflow_runs.csv
+mlflow.db
+mlruns/
+mlartifacts/
+
+# служебное
+.cache/
+logs/
+grade.json
+reports/predictions_test.parquet
+.env
+
+# веса бонусного проекта — на Hugging Face Hub, не в git
+bonus/**/*.safetensors
+bonus/**/*.ckpt
+bonus/**/*.gguf
